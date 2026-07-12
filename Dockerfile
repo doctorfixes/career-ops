@@ -42,4 +42,9 @@ RUN npm install --no-audit --no-fund \
 # edits show up instantly inside the container.
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["bash"]
+
+# Railway: start the API server by default
+# Override CMD for one-off script runs: `docker run --rm career-ops node openrouter-runner.mjs scan`
+COPY railway-entrypoint.mjs ./
+EXPOSE 8080
+CMD ["node", "railway-entrypoint.mjs"]

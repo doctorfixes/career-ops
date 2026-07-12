@@ -49,7 +49,8 @@
     "prepare:application": "node prepare-application.mjs",
     "build:dashboard": "node build-dashboard.mjs",
     "serve:dashboard": "cd dashboard && go run . --path ..",
-    "postinstall": "npx playwright install chromium --with-deps || npx playwright install chromium --with-deps"
+    "start": "node railway-entrypoint.mjs",
+    "postinstall": "npx playwright install chromium --with-deps || npx playwright install chromium --with-deps || true"
   },
   "keywords": [
     "ai",
@@ -72,6 +73,7 @@
     "@google/generative-ai": "^0.24.1",
     "dotenv": "^17.0.0",
     "js-yaml": "^4.1.1",
+    "pdf-parse": "^2.4.5",
     "playwright": "1.61.1"
   }
 }

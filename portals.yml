@@ -1,0 +1,205 @@
+# Portal Scanner Configuration — Ryan Brown
+# Hospitality operations roles, Denver/remote focus
+
+title_filter:
+  positive:
+    - "General Manager"
+    - "Director of Rooms"
+    - "Director of Operations"
+    - "Operations Manager"
+    - "Regional Manager"
+    - "Hotel Manager"
+    - "Assistant General Manager"
+    - "Rooms Division"
+    - "Guest Services"
+    - "Front Office Manager"
+    - "Housekeeping Director"
+    - "Revenue Manager"
+    - "Area General Manager"
+    - "Multi-Property"
+  negative:
+    - "Intern"
+    - "Trainee"
+    - "Entry Level"
+    - "Housekeeping Attendant"
+    - "Front Desk Agent"
+    - "Line Cook"
+    - "Server"
+    - "Bartender"
+    - "Dishwasher"
+    - "Valet"
+    - "Bellman"
+    - "Concierge"
+    - "Night Audit"
+    - "Maintenance Technician"
+    - "Engineer"
+    - "Software"
+    - "Developer"
+    - "DevOps"
+    - "Data Scientist"
+
+location_filter:
+  always_allow:
+    - "United States"
+    - "Denver"
+    - "Colorado"
+    - "Remote"
+  allow:
+    - "Remote"
+    - "United States"
+    - "Denver"
+    - "Colorado"
+  block:
+    - "India"
+    - "Philippines"
+    - "United Kingdom"
+    - "UAE"
+    - "Dubai"
+    - "Singapore"
+    - "Australia"
+    - "Canada"
+    - "Mexico"
+
+salary_filter:
+  min: 70000
+  max: 135000
+  currency: "USD"
+
+max_posting_age_days: 60
+
+search_queries:
+  - provider: indeed
+    query: "Hotel General Manager Denver"
+    enabled: true
+  - provider: indeed
+    query: "Director of Operations hospitality Denver"
+    enabled: true
+  - provider: linkedin
+    query: "Hotel General Manager Denver CO"
+    enabled: true
+  - provider: linkedin
+    query: "Director of Rooms United States"
+    enabled: true
+  - provider: linkedin
+    query: "Director of Operations hospitality United States"
+    enabled: true
+  - provider: linkedin
+    query: "Regional Manager hotels United States"
+    enabled: true
+  - provider: glassdoor
+    query: "Hotel General Manager Denver"
+    enabled: true
+  - provider: glassdoor
+    query: "Director of Operations hospitality"
+    enabled: true
+
+tracked_companies:
+  # -- Major Hotel Brands (Denver/Colorado presence) --
+
+  - name: Marriott International
+    careers_url: https://careers.marriott.com
+    enabled: true
+
+  - name: Hilton Worldwide
+    careers_url: https://jobs.hilton.com
+    enabled: true
+
+  - name: Hyatt Hotels
+    careers_url: https://careers.hyatt.com
+    enabled: true
+
+  - name: IHG Hotels & Resorts
+    careers_url: https://careers.ihg.com
+    enabled: true
+
+  - name: Aimbridge Hospitality
+    careers_url: https://careers.aimbridgehospitality.com
+    enabled: true
+
+  - name: Sage Hospitality
+    careers_url: https://careers.sagehospitality.com
+    enabled: true
+
+  - name: Stonebridge Companies
+    careers_url: https://careers.stonebridgecompanies.com
+    enabled: true
+
+  - name: Davidson Hospitality Group
+    careers_url: https://careers.davidsonhospitality.com
+    enabled: true
+
+  - name: HEI Hotels & Resorts
+    careers_url: https://careers.heihotels.com
+    enabled: true
+
+  - name: Crescent Hotels & Resorts
+    careers_url: https://careers.crescenthotels.com
+    enabled: true
+
+  - name: Highgate Hotels
+    careers_url: https://careers.highgate.com
+    enabled: true
+
+  - name: Pyramid Global Hospitality
+    careers_url: https://careers.pyramidglobal.com
+    enabled: true
+
+  - name: Aparium Hotel Group
+    careers_url: https://careers.aparium.com
+    enabled: true
+
+  - name: CoralTree Hospitality
+    careers_url: https://careers.coraltreehospitality.com
+    enabled: true
+
+  - name: Vail Resorts
+    careers_url: https://jobs.vailresorts.com
+    enabled: true
+
+  - name: Four Seasons
+    careers_url: https://careers.fourseasons.com
+    enabled: true
+
+  - name: Accor Hotels
+    careers_url: https://careers.accor.com
+    enabled: true
+
+  - name: G6 Hospitality
+    careers_url: https://careers.g6hospitality.com
+    enabled: true
+
+  - name: Drury Hotels
+    careers_url: https://careers.druryhotels.com
+    enabled: true
+
+  - name: Graduate Hotels
+    careers_url: https://careers.graduatehotels.com
+    enabled: true
+
+  # -- Management companies with Denver operations --
+
+  - name: Tharaldson Hospitality
+    careers_url: https://careers.tharaldson.com
+    enabled: true
+
+  - name: Dimension Hospitality
+    careers_url: https://careers.dimensionhospitality.com
+    enabled: true
+
+  - name: Ashford Hospitality
+    careers_url: https://careers.ashfordhospitality.com
+    enabled: true
+
+  - name: Hotel Equities
+    careers_url: https://careers.hotelequities.com
+    enabled: true
+
+  - name: Evolution Hospitality
+    careers_url: https://careers.evolutionhospitality.com
+    enabled: true
+
+  # -- Non-hospitality operations roles (stretch target) --
+
+  - name: Xanterra Travel Collection
+    careers_url: https://careers.xanterra.com
+    enabled: true

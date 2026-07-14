@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>career-ops · Pipeline Tracker</title>
+<style>
+  :root {
+    --bg: #0b0f17; --panel: #131a26; --panel-2: #1a2433; --line: #243044;
+    --txt: #e6edf7; --muted: #8a99b0; --accent: #4f9cff; --accent-2: #2dd4bf;
+    --green: #34d399; --amber: #fbbf24; --red: #f87171; --purple: #a78bfa;
+    --blue: #60a5fa; --gray: #64748b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--txt);
+    font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 22px; border-bottom: 1px solid var(--line); background: var(--panel);
+    position: sticky; top: 0; z-index: 10;
+  }
+  header h1 { font-size: 16px; margin: 0; letter-spacing: .3px; }
+  header h1 span { color: var(--accent); }
+  .actions { display: flex; gap: 8px; align-items: center; }
+  button {
+    background: var(--accent); color: #04101f; border: none; border-radius: 8px;
+    padding: 8px 14px; font-weight: 600; cursor: pointer; font-size: 13px;
+    transition: filter .15s ease;
+  }
+  button.secondary { background: var(--panel-2); color: var(--txt); border: 1px solid var(--line); }
+  button:hover { filter: brightness(1.08); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .wrap { padding: 22px; max-width: 1180px; margin: 0 auto; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .card .n { font-size: 30px; font-weight: 700; line-height: 1; }
+  .card .l { color: var(--muted); font-size: 12px; margin-top: 6px; text-transform: uppercase; letter-spacing: .6px; }
+  .card.accent .n { color: var(--accent); }
+  .card.green .n { color: var(--green); }
+  .card.amber .n { color: var(--amber); }
+  .card.blue .n { color: var(--blue); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1.3fr; gap: 18px; }
+  @media (max-width: 880px) { .grid2 { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .panel h2 { font-size: 14px; margin: 0; padding: 13px 16px; border-bottom: 1px solid var(--line);
+    display: flex; justify-content: space-between; align-items: center; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .6px; }
+  .panel h2 .badge { color: var(--accent-2); font-weight: 700; }
+  .list { max-height: 360px; overflow: auto; padding: 6px 0; }
+  .row { padding: 9px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: center; }
+  .row:last-child { border-bottom: none; }
+  .row .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--gray); }
+  .row.pending .dot { background: var(--amber); }
+  .row.done .dot { background: var(--green); }
+  .row .body { flex: 1; min-width: 0; }
+  .row .title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .meta { color: var(--muted); font-size: 12px; }
+  .row a { color: var(--accent); text-decoration: none; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; position: sticky; top: 0; background: var(--panel); }
+  tbody tr:hover { background: var(--panel-2); }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .st-Evaluated { background: rgba(96,165,250,.15); color: var(--blue); }
+  .st-Applied { background: rgba(45,212,191,.15); color: var(--accent-2); }
+  .st-Responded { background: rgba(167,139,250,.15); color: var(--purple); }
+  .st-Interview { background: rgba(251,191,36,.15); color: var(--amber); }
+  .st-Offer { background: rgba(52,211,153,.18); color: var(--green); }
+  .st-Rejected, .st-Discarded, .st-SKIP { background: rgba(248,113,113,.14); color: var(--red); }
+  .empty { padding: 26px; text-align: center; color: var(--muted); }
+  .log { background: #060a12; border: 1px solid var(--line); border-radius: 10px; margin-top: 18px; padding: 14px;
+    font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: #9fb3c8; max-height: 220px; overflow: auto; white-space: pre-wrap; }
+  .log .ok { color: var(--green); } .log .err { color: var(--red); }
+  .toast { position: fixed; bottom: 18px; right: 18px; background: var(--panel-2); border: 1px solid var(--line);
+    padding: 12px 16px; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,.4); opacity: 0; transform: translateY(8px); transition: all .2s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .spin { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--accent); border-top-color: transparent; border-radius: 50%; animation: sp .7s linear infinite; vertical-align: -2px; margin-right: 6px; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>career-ops <span>· Pipeline Tracker</span></h1>
+  <div class="actions">
+    <span id="updated" style="color:var(--muted);font-size:12px;"></span>
+    <button class="secondary" id="refresh">↻ Refresh</button>
+    <button id="scan">▶ Scan ATS</button>
+    <button id="pipeline">⚙ Run Pipeline</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="cards" id="cards"></div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2>Pipeline (URL Inbox) <span class="badge" id="pipeCount">0</span></h2>
+      <div class="list" id="pipeList"><div class="empty">No entries</div></div>
+    </div>
+    <div class="panel">
+      <h2>Applications Tracker <span class="badge" id="trackCount">0</span></h2>
+      <div style="max-height:360px;overflow:auto;">
+        <table>
+          <thead><tr><th>#</th><th>Date</th><th>Company</th><th>Role</th><th>Score</th><th>Status</th></tr></thead>
+          <tbody id="trackBody"><tr><td colspan="6" class="empty">No applications yet</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="log" id="log">Idle. Use the buttons above to scan providers or run the pipeline.</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const api = (path, opts) => fetch(path, opts).then(r => r.json().catch(() => ({})));
+
+function toast(msg, ok = true) {
+  const t = $('#toast'); t.textContent = msg; t.style.borderColor = ok ? 'var(--green)' : 'var(--red)';
+  t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2600);
+}
+function logLine(txt, cls = '') {
+  const el = $('#log'); const span = document.createElement('div');
+  if (cls) span.className = cls; span.textContent = txt; el.appendChild(span); el.scrollTop = el.scrollHeight;
+}
+
+function statusClass(s) { return 'st-' + (s || '').replace(/\s/g, ''); }
+
+function render(data) {
+  const stats = data.stats || {};
+  const cards = [
+    { n: stats.pending ?? 0, l: 'Pending URLs', c: 'amber' },
+    { n: stats.processed ?? 0, l: 'Processed', c: 'green' },
+    { n: stats.applications ?? 0, l: 'Applications', c: 'blue' },
+    { n: stats.reports ?? 0, l: 'Reports', c: 'accent' },
+    { n: stats.interviews ?? 0, l: 'Interviews', c: 'accent' },
+    { n: stats.offers ?? 0, l: 'Offers', c: 'green' },
+  ];
+  $('#cards').innerHTML = cards.map(c =>
+    `<div class="card ${c.c}"><div class="n">${c.n}</div><div class="l">${c.l}</div></div>`).join('');
+
+  // pipeline
+  const pipe = data.pipeline || { pending: [], processed: [] };
+  $('#pipeCount').textContent = pipe.pending.length + pipe.processed.length;
+  const pl = $('#pipeList');
+  if (!pipe.pending.length && !pipe.processed.length) {
+    pl.innerHTML = '<div class="empty">No entries</div>';
+  } else {
+    pl.innerHTML = pipe.pending.map(e => rowPipe(e, true)).join('') + pipe.processed.map(e => rowPipe(e, false)).join('');
+  }
+
+  // tracker
+  const tr = (data.tracker || []).filter(r => r && r['#']);
+  $('#trackCount').textContent = tr.length;
+  const tb = $('#trackBody');
+  if (!tr.length) { tb.innerHTML = '<tr><td colspan="6" class="empty">No applications yet</td></tr>'; }
+  else { tb.innerHTML = tr.map(rowTrack).join(''); }
+
+  $('#updated').textContent = 'updated ' + new Date().toLocaleTimeString();
+}
+
+function rowPipe(e, pending) {
+  const url = e.url || '';
+  const title = e.company ? `${e.company} · ${e.title || ''}` : (e.title || url || 'untitled');
+  const meta = [e.location, e.compensation, e.note, e.posted ? 'posted ' + e.posted : ''].filter(Boolean).join('  ·  ');
+  const link = url ? `<a href="${url}" target="_blank" rel="noopener">open ↗</a>` : '';
+  return `<div class="row ${pending ? 'pending' : 'done'}">
+    <span class="dot"></span>
+    <div class="body"><div class="title">${esc(title)}</div>${meta ? `<div class="meta">${esc(meta)}</div>` : ''}</div>
+    ${link}
+  </div>`;
+}
+
+function rowTrack(r) {
+  const num = r['#'] || '';
+  const status = r.Status || '';
+  const company = r.Company || (r.Via ? '? (via ' + r.Via + ')' : '?');
+  return `<tr>
+    <td>${esc(num)}</td><td>${esc(r.Date || '')}</td>
+    <td>${esc(company)}</td><td>${esc(r.Role || '')}</td>
+    <td>${esc(r.Score || '')}</td>
+    <td><span class="pill ${statusClass(status)}">${esc(status)}</span></td>
+  </tr>`;
+}
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+async function load() {
+  try {
+    const d = await api('/api/data');
+    render(d);
+  } catch (e) { logLine('Failed to load: ' + e.message, 'err'); }
+}
+
+async function runJob(btn, endpoint, label) {
+  btn.disabled = true; const old = btn.textContent; btn.innerHTML = '<span class="spin"></span>' + label;
+  logLine('▶ ' + label + ' started…');
+  try {
+    const res = await api(endpoint, { method: 'POST' });
+    if (res.success) { logLine('✓ ' + label + ' finished (exit ' + res.exit_code + ')', 'ok'); }
+    else { logLine('✗ ' + label + ' failed (exit ' + (res.exit_code ?? '?') + ')', 'err'); if (res.stderr) logLine(res.stderr.slice(0, 600), 'err'); }
+    toast(label + (res.success ? ' complete' : ' failed'), res.success);
+    await load();
+  } catch (e) { logLine('✗ ' + label + ' error: ' + e.message, 'err'); toast(label + ' error', false); }
+  finally { btn.disabled = false; btn.textContent = old; }
+}
+
+$('#refresh').onclick = load;
+$('#scan').onclick = (e) => runJob(e.currentTarget, '/api/scan', 'Scan ATS');
+$('#pipeline').onclick = (e) => runJob(e.currentTarget, '/api/pipeline', 'Run Pipeline');
+
+// live status card counts also poll
+let poll = setInterval(load, 15000);
+window.addEventListener('beforeunload', () => clearInterval(poll));
+load();
+</script>
+</body>
+</html>

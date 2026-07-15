@@ -426,11 +426,21 @@ export function parsePortals(rawOverride) {
     return positive.some(k => t.includes(k)) && !negative.some(k => t.includes(k));
   }
 
-  // Companies with a direct JSON `api:` endpoint (the no-CLI scan path).
+  // Companies the no-CLI scan path can read. Each entry carries its real
+  // provider (greenhouse|phenom|workday|icims) so cmdScan fetches the right
+  // endpoint — NOT a guessed greenhouse slug. `enabled: false` entries are
+  // skipped (JS career centers with no reachable public feed).
   const tracked = Array.isArray(config.tracked_companies) ? config.tracked_companies : [];
   const companies = tracked
-    .filter(c => c && c.api && c.enabled !== false)
-    .map(c => ({ name: String(c.name ?? c.company ?? 'Unknown'), api: String(c.api).trim() }));
+    .filter(c => c && c.enabled !== false)
+    .map(c => ({
+      name: String(c.name ?? c.company ?? 'Unknown'),
+      provider: String(c.provider || (c.api ? 'greenhouse' : '')).trim().toLowerCase(),
+      api: c.api ? String(c.api).trim() : '',
+      careers_url: c.careers_url ? String(c.careers_url).trim() : '',
+      phenom: c.phenom && typeof c.phenom === 'object' ? c.phenom : {},
+    }))
+    .filter(c => c.provider); // drop enabled but feed-less entries
 
   return { companies, titleMatches };
 }
@@ -478,11 +488,17 @@ function addToPipeline(entries) {
       .filter(Boolean).map(m => m[0])
   );
 
+  const batchSeen = new Set();
   const newEntries = entries.filter(e => {
     if (seenUrls.has(e.url)) return false;
     if (appliedUrls.has(e.url)) return false;
     // skip if already queued in pipeline
     if (existingPipeline.includes(e.url)) return false;
+    // skip duplicates WITHIN this scan's batch (Phenom returns one job
+    // under multiple matched title variants → same URL, different role)
+    const key = e.url.toLowerCase();
+    if (batchSeen.has(key)) return false;
+    batchSeen.add(key);
     return true;
   });
 
@@ -492,9 +508,22 @@ function addToPipeline(entries) {
   let pipeline = existingPipeline;
   let hist = history;
 
+  const lines = newEntries.map(e => `- [ ] ${e.url} | ${e.company} | ${e.role}`);
+  // Insert new entries directly under `## Pending` so the dashboard's pending
+  // section reflects them. If the header is missing, fall back to appending.
+  const pendingIdx = pipeline.indexOf('## Pending');
+  const processedIdx = pipeline.indexOf('## Processed');
+  if (pendingIdx !== -1 && (processedIdx === -1 || processedIdx > pendingIdx)) {
+    const insertAt = pendingIdx + '## Pending'.length;
+    const head = pipeline.slice(0, insertAt);
+    let tail = pipeline.slice(insertAt);
+    if (!tail.startsWith('\n')) tail = '\n' + tail;
+    pipeline = head + '\n' + lines.join('\n') + tail;
+  } else {
+    pipeline += lines.join('\n') + '\n';
+  }
   for (const e of newEntries) {
-    pipeline += `- [ ] ${e.url} | ${e.company} | ${e.role}\n`;
-    hist     += `${e.url}\t${today}\tscan\t${e.role}\t${e.company}\tadded\t${e.location ?? ''}\n`;
+    hist += `${e.url}\t${today}\tscan\t${e.role}\t${e.company}\tadded\t${e.location ?? ''}\n`;
   }
 
   writeFile('data/pipeline.md', pipeline);
@@ -534,33 +563,110 @@ function extractCompanySlug(text, url) {
 // ---------------------------------------------------------------------------
 
 // -- SCAN --
+// Provider-aware: reads `provider:` from each portals.yml entry and fetches the
+// matching endpoint (greenhouse / phenom / workday / icims). Falls back to the
+// entry's `api:` as a greenhouse URL when no explicit provider is set.
+const PHENOM_PAGE = 100;
+const PHENOM_BODY = (from, size, country, selFields) => JSON.stringify({
+  lang: 'en_global', deviceType: 'desktop', country, pageName: 'search-results',
+  ddoKey: 'refineSearch', sortBy: '', subsearch: '', from, jobs: true, counts: true,
+  all_fields: ['category', 'country', 'city'], size, clearAll: false, jdsource: 'facets',
+  isSliderEnable: false, pageId: 'page10', siteType: 'external', keywords: '', global: country === 'global',
+  selected_fields: selFields, locationData: {},
+});
+
+async function fetchGreenhouse(api, titleMatches, into) {
+  const r = await fetch(api);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const data = await r.json();
+  const jobs = data.jobs ?? [];
+  let matched = 0;
+  for (const j of jobs) {
+    if (!titleMatches(j.title)) continue;
+    if (!j.absolute_url) continue;
+    matched++;
+    into.push({ url: j.absolute_url, company: '', role: j.title, location: j.location?.name ?? '' });
+  }
+  return { total: jobs.length, matched };
+}
+
+async function fetchPhenom(entry, titleMatches, into) {
+  const urlPrefix = String(entry.phenom?.urlPrefix || 'global/en').replace(/^\/+|\/+$/g, '');
+  const country = String(entry.phenom?.country || 'global');
+  const selFields = entry.phenom?.selectedFields && typeof entry.phenom.selectedFields === 'object' ? entry.phenom.selectedFields : {};
+  const origin = (entry.api || entry.careers_url).replace(/\/$/, '');
+  let total = 0, matched = 0;
+  for (let page = 0; page < 10; page++) {
+    const r = await fetch(`${origin}/widgets`, {
+      method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json', 'user-agent': 'Mozilla/5.0' },
+      body: PHENOM_BODY(page * PHENOM_PAGE, PHENOM_PAGE, country, selFields), redirect: 'error',
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const json = await r.json();
+    const rs = json?.refineSearch;
+    if (total === 0 && typeof rs?.totalHits === 'number') total = rs.totalHits;
+    const jobs = Array.isArray(rs?.data?.jobs) ? rs.data.jobs : [];
+    if (jobs.length === 0) break;
+    for (const j of jobs) {
+      const title = String(j.title || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!title || !titleMatches(title)) continue;
+      const id = j.jobId != null ? String(j.jobId) : '';
+      if (!id) continue;
+      matched++;
+      const loc = String(j.location || j.cityStateCountry || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      into.push({ url: `${origin}/${urlPrefix}/job/${encodeURIComponent(id)}`, company: '', role: title, location: loc });
+    }
+    if ((page + 1) * PHENOM_PAGE >= (total || PHENOM_PAGE)) break;
+  }
+  return { total, matched };
+}
+
+async function fetchWorkday(entry, titleMatches, into) {
+  // entry.api must be the Workday tenant host (e.g. https://x.wd5.myworkdayjobs.com)
+  const m = (entry.api || entry.careers_url).match(/^https:\/\/([\w-]+)\.(wd[\w-]*)\.myworkdayjobs\.com/);
+  if (!m) throw new Error('no Workday tenant in api:/careers_url');
+  const origin = `https://${m[1]}.${m[2]}.myworkdayjobs.com`;
+  const r = await fetch(`${origin}/wday/cxs/${m[1]}/${m[1]}/jobs`, {
+    method: 'POST', headers: { 'content-type': 'application/json', 'user-agent': 'Mozilla/5.0' },
+    body: JSON.stringify({ limit: 20, offset: 0, searchText: '', includeCoordinates: false, fields: ['jobId', 'title'], sortBy: '' }),
+    redirect: 'error',
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const json = await r.json();
+  const jobs = Array.isArray(json?.jobPostings) ? json.jobPostings : [];
+  let matched = 0;
+  for (const j of jobs) {
+    const title = String(j.title || '');
+    if (!titleMatches(title)) continue;
+    const id = j.jobId != null ? String(j.jobId) : '';
+    if (!id) continue;
+    matched++;
+    into.push({ url: `${origin}/${m[1]}/job/${id}`, company: '', role: title, location: String(j.location || '') });
+  }
+  return { total: jobs.length, matched };
+}
+
 async function cmdScan() {
-  console.log('Scanning Greenhouse portals...\n');
+  console.log('Scanning tracked company portals...\n');
 
   let portals;
   try { portals = parsePortals(); }
   catch (e) { console.error(e.message); return; }
 
   const { companies, titleMatches } = portals;
-  console.log(`Greenhouse API companies: ${companies.length}\n`);
+  console.log(`Tracked (enabled, with feed): ${companies.length}\n`);
 
   const found = [];
   for (const c of companies) {
     process.stdout.write(`  ${c.name.padEnd(25)} → `);
     try {
-      assertSafeRemoteUrl(c.api);
-      const r = await fetch(c.api);
-      if (!r.ok) { console.log(`HTTP ${r.status}`); continue; }
-      const data = await r.json();
-      const jobs = data.jobs ?? [];
-      const matched = jobs.filter(j => titleMatches(j.title));
-      console.log(`${jobs.length} listings, ${matched.length} matched`);
-      for (const j of matched) {
-        // Skip postings without a public URL — falling back to the API
-        // endpoint would write an unusable link into the pipeline.
-        if (!j.absolute_url) continue;
-        found.push({ url: j.absolute_url, company: c.name, role: j.title, location: j.location?.name ?? '' });
-      }
+      let res;
+      if (c.provider === 'phenom') res = await fetchPhenom(c, titleMatches, found);
+      else if (c.provider === 'workday') res = await fetchWorkday(c, titleMatches, found);
+      else if (c.provider === 'icims') { console.log('icims needs explicit api: — skipped'); continue; }
+      else { res = await fetchGreenhouse(c.api || c.careers_url, titleMatches, found); }
+      for (const e of found) if (!e.company) e.company = c.name;
+      console.log(`${res.total} listings, ${res.matched} matched`);
     } catch (e) {
       console.log(`ERROR: ${e.message}`);
     }

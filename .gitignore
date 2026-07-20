@@ -10,3 +10,17 @@ output/
 !.env.example
 _extract_pdf.mjs
 _extract_pdf.cjs
+
+# User-layer files (personal data — never commit)
+config/profile.yml
+modes/_profile.md
+portals.yml
+
+# Interview session files contain PII — gitignore all except scaffold
+interview-prep/sessions/*
+!interview-prep/sessions/.gitkeep
+!interview-prep/sessions/README.md
+
+# Received offer/contract files (PII — written by offer-prep mode)
+data/offers/*
+!data/offers/.gitkeep

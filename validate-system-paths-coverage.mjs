@@ -59,7 +59,8 @@ const EXCLUDES = [
 // web/ is the experimental web UI — its own release-please component, never
 // shipped by update-system.mjs, never in the npm package. Excluding it here is
 // part of that isolation contract, not a coverage gap.
-const EXCLUDE_PREFIXES = ['web/'];
+// web-dashboard/ is the standalone dashboard UI — same isolation contract.
+const EXCLUDE_PREFIXES = ['web/', 'web-dashboard/'];
 
 function covered(file) {
   // If explicitly excluded, it is covered
@@ -97,7 +98,8 @@ if (process.argv.includes('--self-test')) {
   // Test sibling mismatch (strict prefix match)
   assert(covered('providers-sibling/justjoin.mjs') === false, 'providers-sibling/justjoin.mjs must NOT be covered');
   assert(covered('web/package.json') === true, 'web/ tree must be covered (isolation-contract prefix exclude)');
-  assert(covered('web-dashboard/index.html') === false, 'web-dashboard/ must NOT ride the web/ prefix exclude');
+  assert(covered('web-dashboard/index.html') === true, 'web-dashboard/ must be covered by its own isolation-contract prefix exclude');
+  assert(covered('web-dashboard-sibling/index.html') === false, 'web-dashboard-sibling/ must NOT ride the web-dashboard/ prefix exclude');
   assert(covered('.npmignore') === true, '.npmignore must be covered (excluded)');
 
   // Test unrelated file

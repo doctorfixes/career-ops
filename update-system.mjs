@@ -277,6 +277,16 @@ const SYSTEM_PATHS = [
   'plugin-audit.mjs',
   'validate-plugin-registry.mjs',
   'config/plugins.example.yml',
+  '.node-version',
+  '_verify_phenom.mjs',
+  'config/PORTFOLIO.md',
+  'discover-feeds.mjs',
+  'modes/_shared.full.md',
+  'modes/oferta.full.md',
+  'openrouter-eval.mjs',
+  'package-lock.json',
+  'railway-entrypoint.mjs',
+  'railway.json',
 ];
 
 const BOOTSTRAP_PATHS = [

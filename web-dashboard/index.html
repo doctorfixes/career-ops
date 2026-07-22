@@ -81,6 +81,10 @@
 </style>
 </head>
 <body>
+<a href="#main-content" class="sr-only" style="position:absolute;left:-9999px;top:0;z-index:9999;padding:8px 16px;background:var(--accent);color:#04101f;font-weight:700;text-decoration:none;">Skip to content</a>
+<style>
+.sr-only:focus { left: 16px !important; top: 8px !important; }
+</style>
 <header>
   <h1>career-ops <span>· Pipeline Tracker</span></h1>
   <div class="actions">
@@ -91,7 +95,7 @@
   </div>
 </header>
 
-<div class="wrap">
+<div class="wrap" id="main-content">
   <div class="cards" id="cards"></div>
 
   <div class="grid2">
@@ -110,7 +114,7 @@
     </div>
   </div>
 
-  <div class="log" id="log">Idle. Use the buttons above to scan providers or run the pipeline.</div>
+  <div class="log" id="log" role="log" aria-live="polite" aria-label="Operation log">Idle. Use the buttons above to scan providers or run the pipeline.</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -218,5 +222,16 @@ let poll = setInterval(load, 15000);
 window.addEventListener('beforeunload', () => clearInterval(poll));
 load();
 </script>
+<footer style="margin-top: 2rem; padding: 1rem 22px; border-top: 1px solid var(--line); text-align: center; font-size: .75rem; color: var(--muted);">
+  <div style="margin-bottom: .5rem;">
+    <span style="display: inline-flex; align-items: center; gap: 6px; background: var(--panel-2); color: var(--accent); padding: 3px 10px; border-radius: 20px;">
+      ● AI-assisted job search — verify match scores before applying
+    </span>
+  </div>
+  <a href="/privacy" style="color: var(--accent); text-decoration: none;">Privacy</a>
+  &middot;
+  <a href="/terms" style="color: var(--accent); text-decoration: none;">Terms</a>
+  &middot; career-ops &copy; 2026
+</footer>
 </body>
 </html>

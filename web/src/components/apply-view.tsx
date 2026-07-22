@@ -251,7 +251,7 @@ function DrivePanel({ steps, filling }: { steps: DriveStep[]; filling?: boolean 
       </div>
       {last?.thumb ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={last.thumb} alt="" className="w-full rounded-xl border border-border shadow-xl shadow-black/10" />
+        <img src={last.thumb} alt="Screenshot of AI-driven form filling in progress" className="w-full rounded-xl border border-border shadow-xl shadow-black/10" />
       ) : (
         <div className="co-skel h-56 w-full rounded-xl" />
       )}

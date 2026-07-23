@@ -133,6 +133,7 @@ AI-powered, CLI-agnostic job search automation: pipeline tracking, offer evaluat
 | `weekly-review.mjs` | Strategic "growth" digest — composes `stats` + `learn` proposals + a **concentration/monoculture guard** (over-reliance on one archetype or ATS vendor) + `tuning-log` churn into `data/weekly-review.md` (JSON or human; `--from <dir>`, `--self-test`). Read-only; direction only, human approves |
 | `conversion.mjs` | Stage-to-stage funnel conversion + **bottleneck finder** — computes each hop's conversion (applied→responded→interview→offer), names the weakest trustworthy hop and the lever it responds to, folds in median days-per-hop from `funnel-velocity` (JSON or human; `--from <dir>`, `--min-n`, `--self-test`). Read-only analysis |
 | `health.mjs` | Pipeline **health telemetry** — rolls up hygiene signals (un-followed-up applications, report-link coverage, non-canonical statuses, reply backlog, pipeline backlog) into a 0–100 score + grade + per-check breakdown (JSON or human; `--from <dir>`, `--self-test`). Surfaced in the `orchestrate` daily digest. Read-only |
+| `readiness.mjs` | Live **readiness scorer** for the job-search checklist (`data/readiness.md`) — auto-scores the measurable items (CV facts, setup, tracked-outcome volume, golden baseline, health, conversion, concurrent processes, comp segment) by reusing `health`/`conversion` pure logic + the analytics, and lists the self-assessed items. Reports per-gate readiness + "push-ready"/"leverage-ready" (JSON or human; `--from <dir>`, `--self-test`). Read-only; unknown never counts as pass |
 | `reports/` | Evaluation reports (format: `{###}-{company-slug}-{YYYY-MM-DD}.md`). Blocks A-F + G (Posting Legitimacy). Header includes `**Legitimacy:** {tier}`. |
 
 ### Plugins (optional)
@@ -341,6 +342,7 @@ These are two separate axes:
 | Wants to tune/calibrate the system from outcomes ("why no traction", "what should I change", "learn from my results") | `learn` — synthesizes ranked tuning proposals from all analytics; propose-only, golden-eval-gated, human-approved before applying |
 | Asks where they're losing candidates / which funnel stage is weakest | run `node conversion.mjs` (script) — per-hop conversion + bottleneck + the lever it responds to |
 | Asks if the pipeline is healthy / wants a hygiene score | run `node health.mjs` (script) — 0–100 health score + per-check breakdown |
+| Asks "how ready am I", wants their job-search readiness scored | run `node readiness.mjs` (script) — auto-scores the measurable readiness-checklist items + lists self-assessed ones |
 | Wants an ATS keyword-gap check for one specific JD (present/missing skills, coverage %) | run `node keyword-gap.mjs <jd-file>` (script; `--json`/`--markdown` available) |
 | Wants to run the whole daily loop / automate the search (scan + tidy + digest) | run `node orchestrate.mjs` (script; `--dry-run` to preview). See `docs/AUTOMATION.md` for scheduling |
 | Asks about follow-ups or application cadence | `followup` |

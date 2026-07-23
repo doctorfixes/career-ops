@@ -220,6 +220,8 @@ const SYSTEM_PATHS = [
   'conversion.test.mjs',
   'health.mjs',
   'health.test.mjs',
+  'readiness.mjs',
+  'readiness.test.mjs',
   'batch/batch-prompt.md',
   'batch/batch-runner.sh',
   'batch/README.md',

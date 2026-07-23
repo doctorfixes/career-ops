@@ -184,6 +184,8 @@ const scripts = [
   { name: 'conversion.mjs --self-test', expectExit: 0 },
   { name: 'health.test.mjs', expectExit: 0 },
   { name: 'health.mjs --self-test', expectExit: 0 },
+  { name: 'readiness.test.mjs', expectExit: 0 },
+  { name: 'readiness.mjs --self-test', expectExit: 0 },
   { name: 'plugins/airtable/test/smoke.mjs', expectExit: 0 },
   { name: 'validate-portals.mjs --file templates/portals.example.yml', expectExit: 0 },
   { name: 'validate-system-paths-coverage.mjs --self-test', expectExit: 0 },

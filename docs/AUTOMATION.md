@@ -217,6 +217,23 @@ It composes the funnel (`stats`), the top `learn` proposals, a
 vendor — correlated rejections through one screening channel are a diversify
 signal), and any tuning churn. Run it weekly or after a batch of outcomes.
 
+## Diagnostics: where am I losing, and is the pipeline healthy?
+
+Two read-only analyses complete the picture:
+
+```bash
+node conversion.mjs   # per-hop funnel conversion + the weakest hop (bottleneck)
+node health.mjs       # 0–100 pipeline health score + hygiene breakdown
+```
+
+`conversion.mjs` answers "which stage am I losing people at?" — it computes each
+transition (applied→responded→interview→offer), names the weakest trustworthy
+hop, and points at the lever it responds to (CV/channel, screen prep, or
+interview/closing). `health.mjs` rolls up hygiene drift (un-followed-up
+applications, missing report links, non-canonical statuses, reply/pipeline
+backlog) into a score the **orchestrator surfaces in its daily digest** — so a
+degrading pipeline is visible without you going looking.
+
 ## CRM mirror (optional)
 
 The tracker files stay canonical; a mirror is an additive, read-only snapshot for

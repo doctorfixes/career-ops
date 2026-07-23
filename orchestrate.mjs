@@ -356,7 +356,7 @@ function runStep(step, opts) {
 /**
  * Build the digest data object from before/after snapshots and step results.
  */
-export function buildDigest({ before, after, steps, tracker, replies, followupsDue, date }) {
+export function buildDigest({ before, after, steps, tracker, replies, followupsDue, health, date }) {
   const newLeads = Math.max(0, after.pending - before.pending) + Math.max(0, after.processed - before.processed);
   return {
     date,
@@ -367,6 +367,7 @@ export function buildDigest({ before, after, steps, tracker, replies, followupsD
     tracker_by_status: tracker.byStatus,
     replies_pending: replies,
     followups_due: followupsDue,
+    health: health ? { score: health.score, grade: health.grade } : null,
     steps: steps.map(s => ({ id: s.id, ok: s.ok, ms: s.ms, note: s.note })),
     ok: steps.every(s => s.ok),
   };
@@ -384,6 +385,7 @@ export function formatDigest(d) {
     L.push(`- **Follow-ups due:** ${d.followups_due}${d.followups_due ? '  → `node followup-cadence.mjs --summary`' : ''}`);
   }
   L.push(`- **Tracker rows:** ${d.tracker_total}`);
+  if (d.health) L.push(`- **Pipeline health:** ${d.health.score}/100 (${d.health.grade})`);
   const statuses = Object.entries(d.tracker_by_status).sort((a, b) => b[1] - a[1]);
   if (statuses.length) {
     L.push('');
@@ -419,6 +421,18 @@ function getFollowupsDue() {
     if (typeof data?.due_count === 'number') return data.due_count;
     if (Array.isArray(data?.followups)) return data.followups.filter(f => f?.due || f?.overdue).length;
     return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Best-effort pipeline health score via health.mjs --json. */
+function getHealth() {
+  try {
+    const res = spawnSync('node', ['health.mjs', '--json'], { cwd: __dirname, encoding: 'utf-8', timeout: 60_000, env: process.env });
+    if (res.status !== 0 || !res.stdout) return null;
+    const d = JSON.parse(res.stdout);
+    return typeof d?.score === 'number' ? d : null;
   } catch {
     return null;
   }
@@ -474,8 +488,9 @@ async function main() {
   const tracker = summarizeTracker(readFileSafe(APPS_PATH));
   const replies = existsSync(REPLIES_PATH) ? countReplyCandidates(readFileSafe(REPLIES_PATH)) : 0;
   const followupsDue = getFollowupsDue();
+  const health = getHealth();
 
-  const digest = buildDigest({ before, after, steps, tracker, replies, followupsDue, date });
+  const digest = buildDigest({ before, after, steps, tracker, replies, followupsDue, health, date });
   const md = formatDigest(digest);
 
   try {

@@ -131,6 +131,8 @@ AI-powered, CLI-agnostic job search automation: pipeline tracking, offer evaluat
 | `learn.mjs` | Calibration engine (closes the learning loop) — reads `analyze-patterns` + `funnel-velocity` + `salary-gap` + `upskill` and synthesizes ranked, evidence-backed tuning proposals mapped to specific knobs (archetype fit, score floor, channel strategy, comp target, cadence, skill focus). **Propose-only** (writes `data/learn-proposals.md`, never user facts); scoring/targeting proposals are `gated` by the `eval-golden` baseline. Driven by the `learn` mode (JSON or human; `--from <dir>`, `--no-gate`, `--self-test`) |
 | `tuning-log.mjs` | Provenance ledger for applied calibrations — `add` appends a row (knob, old→new, evidence, confidence, golden-gate result, date) to `data/tuning-log.tsv`; `--summary`/`--json` show history + a **churn guard** that flags flip-flopped knobs (noise-chasing). Append-only, user layer; never edits your profile |
 | `weekly-review.mjs` | Strategic "growth" digest — composes `stats` + `learn` proposals + a **concentration/monoculture guard** (over-reliance on one archetype or ATS vendor) + `tuning-log` churn into `data/weekly-review.md` (JSON or human; `--from <dir>`, `--self-test`). Read-only; direction only, human approves |
+| `conversion.mjs` | Stage-to-stage funnel conversion + **bottleneck finder** — computes each hop's conversion (applied→responded→interview→offer), names the weakest trustworthy hop and the lever it responds to, folds in median days-per-hop from `funnel-velocity` (JSON or human; `--from <dir>`, `--min-n`, `--self-test`). Read-only analysis |
+| `health.mjs` | Pipeline **health telemetry** — rolls up hygiene signals (un-followed-up applications, report-link coverage, non-canonical statuses, reply backlog, pipeline backlog) into a 0–100 score + grade + per-check breakdown (JSON or human; `--from <dir>`, `--self-test`). Surfaced in the `orchestrate` daily digest. Read-only |
 | `reports/` | Evaluation reports (format: `{###}-{company-slug}-{YYYY-MM-DD}.md`). Blocks A-F + G (Posting Legitimacy). Header includes `**Legitimacy:** {tier}`. |
 
 ### Plugins (optional)
@@ -337,6 +339,8 @@ These are two separate axes:
 | Maintains their own hand-tuned `.tex` CV and wants it tailored in place (opt-in; cv.md stays the default) | `latex-tex` |
 | Asks what skills to learn, wants a skill-gap analysis of their pipeline | `upskill` |
 | Wants to tune/calibrate the system from outcomes ("why no traction", "what should I change", "learn from my results") | `learn` — synthesizes ranked tuning proposals from all analytics; propose-only, golden-eval-gated, human-approved before applying |
+| Asks where they're losing candidates / which funnel stage is weakest | run `node conversion.mjs` (script) — per-hop conversion + bottleneck + the lever it responds to |
+| Asks if the pipeline is healthy / wants a hygiene score | run `node health.mjs` (script) — 0–100 health score + per-check breakdown |
 | Wants an ATS keyword-gap check for one specific JD (present/missing skills, coverage %) | run `node keyword-gap.mjs <jd-file>` (script; `--json`/`--markdown` available) |
 | Wants to run the whole daily loop / automate the search (scan + tidy + digest) | run `node orchestrate.mjs` (script; `--dry-run` to preview). See `docs/AUTOMATION.md` for scheduling |
 | Asks about follow-ups or application cadence | `followup` |

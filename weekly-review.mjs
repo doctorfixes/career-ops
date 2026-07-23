@@ -101,7 +101,7 @@ export function buildReview({ stats, learn, patterns, tuning, date } = {}) {
 
   return {
     date: date || new Date().toISOString().slice(0, 10),
-    volume: tracker ? { total: tracker.total ?? null, active: tracker.active ?? null } : null,
+    volume: tracker ? { total: tracker.total ?? null, active: tracker.activeApps ?? tracker.active ?? null } : null,
     funnel: funnel ? {
       everApplied: funnel.everApplied ?? null,
       responseRate: funnel.responseRate ?? null,

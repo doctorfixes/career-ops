@@ -137,6 +137,17 @@ const digest = buildDigest({
 eq('buildDigest new_leads = pending delta', digest.new_leads, 2);
 eq('buildDigest ok reflects step failure', digest.ok, false);
 eq('buildDigest carries replies + followups', [digest.replies_pending, digest.followups_due], [2, 1]);
+eq('buildDigest health null when absent', digest.health, null);
+
+// health, when provided, is carried + rendered; absent → omitted
+const withHealth = buildDigest({
+  before: { pending: 0, processed: 0, total: 0 }, after: { pending: 0, processed: 0, total: 0 },
+  steps: [{ id: 'scan', ok: true, ms: 10, note: 'ok' }], tracker: { total: 3, byStatus: {} },
+  replies: 0, followupsDue: 0, health: { score: 82, grade: 'B' }, date: '2026-07-23',
+});
+eq('buildDigest carries health score/grade', withHealth.health, { score: 82, grade: 'B' });
+ok('formatDigest renders health line when present', formatDigest(withHealth).includes('Pipeline health:** 82/100 (B)'));
+ok('formatDigest omits health line when absent', !formatDigest(digest).includes('Pipeline health'));
 
 const md = formatDigest(digest);
 ok('formatDigest mentions new leads', md.includes('New leads this run:** 2'));

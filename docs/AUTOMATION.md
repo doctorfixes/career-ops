@@ -197,6 +197,26 @@ scoring accuracy. The `learn` mode walks you through review → approve → appl
 re-gate. This is the "grow" half of the system: run it periodically (or after a
 batch of outcomes) to keep targeting matched to what's actually converting.
 
+**Provenance + churn guard.** Every calibration you apply is recorded in an
+append-only ledger so it's legible and reversible, and so over-tuning is caught:
+
+```bash
+node tuning-log.mjs add --knob <knob> --old <v> --new <v> --evidence "..."
+node tuning-log.mjs --summary   # history + flip-flop / noise-chasing flags
+```
+
+**Weekly strategic review.** Where `orchestrate` reports "what needs me today",
+`weekly-review.mjs` reports "how is the search trending and what should I tune":
+
+```bash
+node weekly-review.mjs          # → data/weekly-review.md
+```
+
+It composes the funnel (`stats`), the top `learn` proposals, a
+**concentration/monoculture guard** (flags over-reliance on one archetype or ATS
+vendor — correlated rejections through one screening channel are a diversify
+signal), and any tuning churn. Run it weekly or after a batch of outcomes.
+
 ## CRM mirror (optional)
 
 The tracker files stay canonical; a mirror is an additive, read-only snapshot for

@@ -56,6 +56,20 @@ These are **user-layer** files (DATA_CONTRACT.md). You edit them only because th
 user approved the specific change — the same "user asks → agent edits" model as
 the rest of career-ops. Never fabricate facts; re-weighting and re-framing only.
 
+## Step 3.5 — Record it in the provenance ledger
+
+After applying an approved change, log it so the calibration has a paper trail
+and the churn guard can catch over-tuning:
+
+```bash
+node tuning-log.mjs add --knob auto_pdf_score_threshold --old 3.0 --new 3.7 \
+  --proposal score-floor --category scoring --confidence medium \
+  --gate pass --evidence "advanced avg 4.2 vs rejected 3.3"
+```
+
+If `tuning-log` warns that a knob has flip-flopped, stop re-tuning it — the
+signal is probably noise. Surface that to the user instead of applying again.
+
 ## Step 4 — Re-run the gate (for any gated change)
 
 After editing anything that affects scoring/archetypes/targeting, confirm you

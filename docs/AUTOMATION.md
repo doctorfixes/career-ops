@@ -176,6 +176,27 @@ It reports canonical **skills present vs missing** (same vocabulary as
 a missing keyword is a prompt to **reformulate real experience you already have**,
 never to fabricate one.
 
+## The learning loop (calibrate from outcomes)
+
+`orchestrate.mjs` keeps the pipeline moving; `learn.mjs` keeps it *pointed in the
+right direction*. Once you have tracked outcomes (applications with
+replies/interviews/rejections), it reads every analytics signal and proposes
+concrete, evidence-backed tuning:
+
+```bash
+node learn.mjs            # ranked proposals → data/learn-proposals.md
+node learn.mjs --json     # structured
+```
+
+Each proposal names the exact knob to change (archetype fit, score floor,
+channel strategy, comp target, follow-up cadence, skill focus), the evidence
+behind it, and a confidence from sample size. It is **propose-only** — it never
+edits your profile. Scoring/targeting proposals are `gated` by the golden-eval
+baseline (`eval-golden.mjs`), so a calibration change can't silently degrade
+scoring accuracy. The `learn` mode walks you through review → approve → apply →
+re-gate. This is the "grow" half of the system: run it periodically (or after a
+batch of outcomes) to keep targeting matched to what's actually converting.
+
 ## CRM mirror (optional)
 
 The tracker files stay canonical; a mirror is an additive, read-only snapshot for

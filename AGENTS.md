@@ -125,6 +125,9 @@ AI-powered, CLI-agnostic job search automation: pipeline tracking, offer evaluat
 | `scan.mjs` | Zero-token portal scanner — hits Greenhouse/Ashby/Lever APIs directly, zero LLM cost |
 | `check-liveness.mjs` | Job posting liveness checker |
 | `liveness-core.mjs` | Shared liveness logic (expired signals win over generic Apply text) |
+| `orchestrate.mjs` | Daily automation spine — chains scan → plugin ingests → liveness → merge-tracker → followup-seed → (reply ingest) → plugin export → digest, so a scheduler runs the loop unattended. Human-in-the-loop: discovers + tidies + reports; never evaluates, applies, or submits. Writes `data/orchestrator-digest.md` + `data/orchestrator-runs.tsv`. See `docs/AUTOMATION.md` |
+| `ingest-replies.mjs` | Turns inbox emails into `data/reply-candidates.json` for `reply-watch` — sources: `--source eml <dir>` / `mbox <file>` / `json <file>` (offline) or `gmail` (reuses the gmail plugin's OAuth). De-dups by `message_id`; adds a strong-signal hint via the shared classifier |
+| `keyword-gap.mjs` | Per-JD ATS keyword-gap report — compares one JD against your CV corpus (reuses the `upskill` tokenizer), reports skills present/missing + coverage %, and notable JD keywords absent from the CV (JSON, `--markdown`, or human). Analysis only — reformulate, never fabricate |
 | `reports/` | Evaluation reports (format: `{###}-{company-slug}-{YYYY-MM-DD}.md`). Blocks A-F + G (Posting Legitimacy). Header includes `**Legitimacy:** {tier}`. |
 
 ### Plugins (optional)
@@ -330,8 +333,10 @@ These are two separate axes:
 | Wants to broaden the search with adjacent job titles suggested from the CV | `titles` |
 | Maintains their own hand-tuned `.tex` CV and wants it tailored in place (opt-in; cv.md stays the default) | `latex-tex` |
 | Asks what skills to learn, wants a skill-gap analysis of their pipeline | `upskill` |
+| Wants an ATS keyword-gap check for one specific JD (present/missing skills, coverage %) | run `node keyword-gap.mjs <jd-file>` (script; `--json`/`--markdown` available) |
+| Wants to run the whole daily loop / automate the search (scan + tidy + digest) | run `node orchestrate.mjs` (script; `--dry-run` to preview). See `docs/AUTOMATION.md` for scheduling |
 | Asks about follow-ups or application cadence | `followup` |
-| Wants to classify application replies and review updates | `reply-watch` — classifies candidate replies, matches them to applications, and suggests tracker updates |
+| Wants to classify application replies and review updates | `reply-watch` — classifies candidate replies, matches them to applications, and suggests tracker updates (feed it with `node ingest-replies.mjs --source …`) |
 | Wants to update the system | `update` |
 | Wants to queue a request for later / check the inbox between sessions | `agent-inbox` — append-only checklist the agent drains at the start of the next session; nothing auto-submits |
 

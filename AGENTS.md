@@ -134,6 +134,7 @@ AI-powered, CLI-agnostic job search automation: pipeline tracking, offer evaluat
 | `conversion.mjs` | Stage-to-stage funnel conversion + **bottleneck finder** — computes each hop's conversion (applied→responded→interview→offer), names the weakest trustworthy hop and the lever it responds to, folds in median days-per-hop from `funnel-velocity` (JSON or human; `--from <dir>`, `--min-n`, `--self-test`). Read-only analysis |
 | `health.mjs` | Pipeline **health telemetry** — rolls up hygiene signals (un-followed-up applications, report-link coverage, non-canonical statuses, reply backlog, pipeline backlog) into a 0–100 score + grade + per-check breakdown (JSON or human; `--from <dir>`, `--self-test`). Surfaced in the `orchestrate` daily digest. Read-only |
 | `readiness.mjs` | Live **readiness scorer** for the job-search checklist (`data/readiness.md`) — auto-scores the measurable items (CV facts, setup, tracked-outcome volume, golden baseline, health, conversion, concurrent processes, comp segment) by reusing `health`/`conversion` pure logic + the analytics, and lists the self-assessed items. Reports per-gate readiness + "push-ready"/"leverage-ready" (JSON or human; `--from <dir>`, `--self-test`). Read-only; unknown never counts as pass |
+| `indeed.mjs` | **Indeed → pipeline bridge** (agent-mediated discovery). Indeed has no open API, so an AI CLI with the Indeed integration runs its job search, saves the output, and pipes it here: `node indeed.mjs --ingest <file\|->` parses the block format and appends new roles to `data/pipeline.md`, deduped against scan-history/tracker/pipeline (portal tag `indeed`). No credentials stored, no scraping. Never applies — fills the discovery inbox for the `pipeline` mode to evaluate |
 | `reports/` | Evaluation reports (format: `{###}-{company-slug}-{YYYY-MM-DD}.md`). Blocks A-F + G (Posting Legitimacy). Header includes `**Legitimacy:** {tier}`. |
 
 ### Plugins (optional)
@@ -332,6 +333,7 @@ These are two separate axes:
 | Asks about application status | `tracker` |
 | Fills out application form | `apply` |
 | Searches for new offers | `scan` |
+| Wants to pull jobs from Indeed | run the Indeed job-search integration for their target roles + location, save the output, then `node indeed.mjs --ingest <file>` to add new roles to the pipeline (deduped) |
 | Processes pending URLs | `pipeline` |
 | Batch processes offers | `batch` |
 | Asks about rejection patterns, wants to improve targeting, or wants to match interview answers to best-fit roles | `patterns` |

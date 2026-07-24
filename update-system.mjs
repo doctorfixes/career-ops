@@ -222,6 +222,8 @@ const SYSTEM_PATHS = [
   'health.test.mjs',
   'readiness.mjs',
   'readiness.test.mjs',
+  'indeed.mjs',
+  'indeed.test.mjs',
   'batch/batch-prompt.md',
   'batch/batch-runner.sh',
   'batch/README.md',

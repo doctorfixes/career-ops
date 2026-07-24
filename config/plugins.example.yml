@@ -33,3 +33,10 @@ plugins:
     enabled: false
     # label: "Job Leads"     # the Gmail label to scan
     # days_back: 7           # how far back to look
+
+  # ── airtable (export + search) ── mirror your tracker to an Airtable base / read records back.
+  # Needs AIRTABLE_TOKEN + AIRTABLE_BASE_ID in .env. Run via `node plugins.mjs run airtable export`.
+  # The table is resolved by NAME ("Applications") — override with `table:` if yours differs.
+  airtable:
+    enabled: false
+    # table: "Applications"  # the table name in your base

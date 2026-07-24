@@ -24,7 +24,7 @@
 
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { load as yamlLoad } from 'js-yaml';
 import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
 
@@ -476,19 +476,24 @@ soft_gaps:
 }
 
 // --- CLI ---
-const args = process.argv.slice(2);
-if (args.includes('--self-test')) runSelfTest();
+// Guard the CLI so importing this module's exports (e.g. extractSkills, reused
+// by keyword-gap.mjs) has no side effects — only a direct `node upskill.mjs`
+// invocation runs the analysis and prints.
+if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
+  const args = process.argv.slice(2);
+  if (args.includes('--self-test')) runSelfTest();
 
-const minReportsIdx = args.indexOf('--min-reports');
-const MIN_REPORTS = (() => {
-  if (minReportsIdx === -1 || args[minReportsIdx + 1] === undefined) return 5;
-  const n = parseInt(args[minReportsIdx + 1], 10);
-  return Number.isNaN(n) || n < 1 ? 5 : n;
-})();
+  const minReportsIdx = args.indexOf('--min-reports');
+  const MIN_REPORTS = (() => {
+    if (minReportsIdx === -1 || args[minReportsIdx + 1] === undefined) return 5;
+    const n = parseInt(args[minReportsIdx + 1], 10);
+    return Number.isNaN(n) || n < 1 ? 5 : n;
+  })();
 
-const result = analyze(MIN_REPORTS);
-if (args.includes('--summary')) {
-  printSummary(result);
-} else {
-  console.log(JSON.stringify(result, null, 2));
+  const result = analyze(MIN_REPORTS);
+  if (args.includes('--summary')) {
+    printSummary(result);
+  } else {
+    console.log(JSON.stringify(result, null, 2));
+  }
 }

@@ -171,6 +171,24 @@ const scripts = [
   { name: 'followup-cadence.test.mjs', expectExit: 0 },
   { name: 'process-quality.test.mjs', expectExit: 0 },
   { name: 'reply-matcher.test.mjs', expectExit: 0 },
+  { name: 'ingest-replies.test.mjs', expectExit: 0 },
+  { name: 'orchestrate.test.mjs', expectExit: 0 },
+  { name: 'keyword-gap.test.mjs', expectExit: 0 },
+  { name: 'learn.test.mjs', expectExit: 0 },
+  { name: 'learn.mjs --self-test', expectExit: 0 },
+  { name: 'tuning-log.test.mjs', expectExit: 0 },
+  { name: 'tuning-log.mjs --self-test', expectExit: 0 },
+  { name: 'weekly-review.test.mjs', expectExit: 0 },
+  { name: 'weekly-review.mjs --self-test', expectExit: 0 },
+  { name: 'conversion.test.mjs', expectExit: 0 },
+  { name: 'conversion.mjs --self-test', expectExit: 0 },
+  { name: 'health.test.mjs', expectExit: 0 },
+  { name: 'health.mjs --self-test', expectExit: 0 },
+  { name: 'readiness.test.mjs', expectExit: 0 },
+  { name: 'readiness.mjs --self-test', expectExit: 0 },
+  { name: 'indeed.test.mjs', expectExit: 0 },
+  { name: 'indeed.mjs --self-test', expectExit: 0 },
+  { name: 'plugins/airtable/test/smoke.mjs', expectExit: 0 },
   { name: 'validate-portals.mjs --file templates/portals.example.yml', expectExit: 0 },
   { name: 'validate-system-paths-coverage.mjs --self-test', expectExit: 0 },
   { name: 'validate-system-paths-coverage.mjs', expectExit: 0 },
@@ -7093,8 +7111,8 @@ try {
   // Bundled plugins: discovery + import coverage + static deny-list + firewall.
   const bundled = discoverPlugins([join(ROOT, 'plugins')]);
   const ids = bundled.map(p => p.id).sort().join(',');
-  if (ids === 'apify,gmail,notion') pass('all 3 bundled reference plugins discovered (apify, gmail, notion)');
-  else fail(`bundled plugins = "${ids}" (expected apify,gmail,notion)`);
+  if (ids === 'airtable,apify,gmail,notion') pass('all 4 bundled reference plugins discovered (airtable, apify, gmail, notion)');
+  else fail(`bundled plugins = "${ids}" (expected airtable,apify,gmail,notion)`);
 
   let importOk = bundled.length > 0;
   for (const p of bundled) {

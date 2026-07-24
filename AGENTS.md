@@ -125,6 +125,16 @@ AI-powered, CLI-agnostic job search automation: pipeline tracking, offer evaluat
 | `scan.mjs` | Zero-token portal scanner — hits Greenhouse/Ashby/Lever APIs directly, zero LLM cost |
 | `check-liveness.mjs` | Job posting liveness checker |
 | `liveness-core.mjs` | Shared liveness logic (expired signals win over generic Apply text) |
+| `orchestrate.mjs` | Daily automation spine — chains scan → plugin ingests → liveness → merge-tracker → followup-seed → (reply ingest) → plugin export → digest, so a scheduler runs the loop unattended. Human-in-the-loop: discovers + tidies + reports; never evaluates, applies, or submits. Writes `data/orchestrator-digest.md` + `data/orchestrator-runs.tsv`. See `docs/AUTOMATION.md` |
+| `ingest-replies.mjs` | Turns inbox emails into `data/reply-candidates.json` for `reply-watch` — sources: `--source eml <dir>` / `mbox <file>` / `json <file>` (offline) or `gmail` (reuses the gmail plugin's OAuth). De-dups by `message_id`; adds a strong-signal hint via the shared classifier |
+| `keyword-gap.mjs` | Per-JD ATS keyword-gap report — compares one JD against your CV corpus (reuses the `upskill` tokenizer), reports skills present/missing + coverage %, and notable JD keywords absent from the CV (JSON, `--markdown`, or human). Analysis only — reformulate, never fabricate |
+| `learn.mjs` | Calibration engine (closes the learning loop) — reads `analyze-patterns` + `funnel-velocity` + `salary-gap` + `upskill` and synthesizes ranked, evidence-backed tuning proposals mapped to specific knobs (archetype fit, score floor, channel strategy, comp target, cadence, skill focus). **Propose-only** (writes `data/learn-proposals.md`, never user facts); scoring/targeting proposals are `gated` by the `eval-golden` baseline. Driven by the `learn` mode (JSON or human; `--from <dir>`, `--no-gate`, `--self-test`) |
+| `tuning-log.mjs` | Provenance ledger for applied calibrations — `add` appends a row (knob, old→new, evidence, confidence, golden-gate result, date) to `data/tuning-log.tsv`; `--summary`/`--json` show history + a **churn guard** that flags flip-flopped knobs (noise-chasing). Append-only, user layer; never edits your profile |
+| `weekly-review.mjs` | Strategic "growth" digest — composes `stats` + `learn` proposals + a **concentration/monoculture guard** (over-reliance on one archetype or ATS vendor) + `tuning-log` churn into `data/weekly-review.md` (JSON or human; `--from <dir>`, `--self-test`). Read-only; direction only, human approves |
+| `conversion.mjs` | Stage-to-stage funnel conversion + **bottleneck finder** — computes each hop's conversion (applied→responded→interview→offer), names the weakest trustworthy hop and the lever it responds to, folds in median days-per-hop from `funnel-velocity` (JSON or human; `--from <dir>`, `--min-n`, `--self-test`). Read-only analysis |
+| `health.mjs` | Pipeline **health telemetry** — rolls up hygiene signals (un-followed-up applications, report-link coverage, non-canonical statuses, reply backlog, pipeline backlog) into a 0–100 score + grade + per-check breakdown (JSON or human; `--from <dir>`, `--self-test`). Surfaced in the `orchestrate` daily digest. Read-only |
+| `readiness.mjs` | Live **readiness scorer** for the job-search checklist (`data/readiness.md`) — auto-scores the measurable items (CV facts, setup, tracked-outcome volume, golden baseline, health, conversion, concurrent processes, comp segment) by reusing `health`/`conversion` pure logic + the analytics, and lists the self-assessed items. Reports per-gate readiness + "push-ready"/"leverage-ready" (JSON or human; `--from <dir>`, `--self-test`). Read-only; unknown never counts as pass |
+| `indeed.mjs` | **Indeed → pipeline bridge** (agent-mediated discovery). Indeed has no open API, so an AI CLI with the Indeed integration runs its job search, saves the output, and pipes it here: `node indeed.mjs --ingest <file\|->` parses the block format and appends new roles to `data/pipeline.md`, deduped against scan-history/tracker/pipeline (portal tag `indeed`). No credentials stored, no scraping. Never applies — fills the discovery inbox for the `pipeline` mode to evaluate |
 | `reports/` | Evaluation reports (format: `{###}-{company-slug}-{YYYY-MM-DD}.md`). Blocks A-F + G (Posting Legitimacy). Header includes `**Legitimacy:** {tier}`. |
 
 ### Plugins (optional)
@@ -323,6 +333,7 @@ These are two separate axes:
 | Asks about application status | `tracker` |
 | Fills out application form | `apply` |
 | Searches for new offers | `scan` |
+| Wants to pull jobs from Indeed | run the Indeed job-search integration for their target roles + location, save the output, then `node indeed.mjs --ingest <file>` to add new roles to the pipeline (deduped) |
 | Processes pending URLs | `pipeline` |
 | Batch processes offers | `batch` |
 | Asks about rejection patterns, wants to improve targeting, or wants to match interview answers to best-fit roles | `patterns` |
@@ -330,8 +341,14 @@ These are two separate axes:
 | Wants to broaden the search with adjacent job titles suggested from the CV | `titles` |
 | Maintains their own hand-tuned `.tex` CV and wants it tailored in place (opt-in; cv.md stays the default) | `latex-tex` |
 | Asks what skills to learn, wants a skill-gap analysis of their pipeline | `upskill` |
+| Wants to tune/calibrate the system from outcomes ("why no traction", "what should I change", "learn from my results") | `learn` — synthesizes ranked tuning proposals from all analytics; propose-only, golden-eval-gated, human-approved before applying |
+| Asks where they're losing candidates / which funnel stage is weakest | run `node conversion.mjs` (script) — per-hop conversion + bottleneck + the lever it responds to |
+| Asks if the pipeline is healthy / wants a hygiene score | run `node health.mjs` (script) — 0–100 health score + per-check breakdown |
+| Asks "how ready am I", wants their job-search readiness scored | run `node readiness.mjs` (script) — auto-scores the measurable readiness-checklist items + lists self-assessed ones |
+| Wants an ATS keyword-gap check for one specific JD (present/missing skills, coverage %) | run `node keyword-gap.mjs <jd-file>` (script; `--json`/`--markdown` available) |
+| Wants to run the whole daily loop / automate the search (scan + tidy + digest) | run `node orchestrate.mjs` (script; `--dry-run` to preview). See `docs/AUTOMATION.md` for scheduling |
 | Asks about follow-ups or application cadence | `followup` |
-| Wants to classify application replies and review updates | `reply-watch` — classifies candidate replies, matches them to applications, and suggests tracker updates |
+| Wants to classify application replies and review updates | `reply-watch` — classifies candidate replies, matches them to applications, and suggests tracker updates (feed it with `node ingest-replies.mjs --source …`) |
 | Wants to update the system | `update` |
 | Wants to queue a request for later / check the inbox between sessions | `agent-inbox` — append-only checklist the agent drains at the start of the next session; nothing auto-submits |
 

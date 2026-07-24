@@ -15,6 +15,7 @@ _extract_pdf.cjs
 config/profile.yml
 modes/_profile.md
 portals.yml
+article-digest.md
 
 # Interview session files contain PII — gitignore all except scaffold
 interview-prep/sessions/*

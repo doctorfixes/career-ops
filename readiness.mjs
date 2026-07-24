@@ -50,9 +50,9 @@ const unk = (detail) => ({ status: 'unknown', detail });
 
 export const CHECKS = [
   // Gate 1 — Honest, complete inputs
-  { gate: 1, id: 'cv-facts', label: 'CV facts verify clean', kind: 'measurable',
-    evaluate: (s) => s.cvFactsOk == null ? unk('could not run verify-cv-facts / cv-sync-check')
-      : s.cvFactsOk ? pass('verify-cv-facts + cv-sync-check pass') : fail('CV facts or sync check failing') },
+  { gate: 1, id: 'cv-facts', label: 'CV is internally consistent (sync check)', kind: 'measurable',
+    evaluate: (s) => s.cvFactsOk == null ? unk('could not run cv-sync-check')
+      : s.cvFactsOk ? pass('cv-sync-check passes') : fail('cv-sync-check failing') },
   { gate: 1, id: 'doctor', label: 'System set up', kind: 'measurable',
     evaluate: (s) => s.doctorReady == null ? unk('could not run doctor')
       : s.doctorReady ? pass('doctor: no missing prerequisites') : fail('doctor: onboarding incomplete') },
@@ -220,11 +220,13 @@ export function gatherSignals() {
   const conv = computeStageConversion(funnel);
 
   const salary = runJson('salary-gap.mjs');
-  const cvFacts = runOk('verify-cv-facts.mjs');
+  // cv-sync-check verifies cv.md is internally consistent. (verify-cv-facts.mjs
+  // is a post-GENERATION check — it needs a generated CV arg — so it isn't a
+  // readiness signal.)
   const cvSync = runOk('cv-sync-check.mjs');
 
   return {
-    cvFactsOk: (cvFacts == null || cvSync == null) ? null : (cvFacts && cvSync),
+    cvFactsOk: cvSync,
     doctorReady: (() => { const d = runJson('doctor.mjs', ['--json']); return d ? d.onboardingNeeded === false : null; })(),
     orchestratorRuns: countRunLog(),
     everApplied: hasTracker ? (funnel.everApplied || 0) : null,
